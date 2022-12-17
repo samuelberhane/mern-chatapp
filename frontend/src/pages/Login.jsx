@@ -1,17 +1,83 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { loginRoute } from "../utils/apiRoutes";
+import { toastOption } from "../utils/toastOption";
+import { useGlobalUserContext } from "../context/userContext";
 
 const Login = () => {
+  const { dispatch, accountCreated } = useGlobalUserContext();
+  const [inputValues, setInputValues] = useState({
+    username: "",
+    password: "",
+  });
+
+  const handleChange = (e) => {
+    setInputValues({ ...inputValues, [e.target.name]: e.target.value });
+  };
+
+  const handleValidation = () => {
+    const { username, password } = inputValues;
+    if (username.length < 4) {
+      toast.error("Minimum username length should be 4!", toastOption);
+      return false;
+    }
+    if (password.length < 8) {
+      toast.error("Minimum password length should be 8!", toastOption);
+      return false;
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    accountCreated && toast.success(accountCreated, toastOption);
+    setTimeout(() => {
+      dispatch({ type: "CREATED" });
+    }, 5000);
+  }, [accountCreated, dispatch]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    handleValidation();
+
+    if (handleValidation) {
+      const { username, password } = inputValues;
+      const { data } = await axios.post(loginRoute, { username, password });
+      if (data.status === false) toast.error(data.message, toastOption);
+      if (data.status === true) {
+        console.log(data);
+        dispatch({ type: "LOGIN", payload: data });
+        setInputValues({
+          username: "",
+          password: "",
+        });
+      }
+    }
+  };
   return (
     <section>
       <FormContainer>
         <h1 className="title">Chat With Family And Friends!</h1>
-        <form className="form">
+        <form className="form" onSubmit={handleSubmit}>
           <h1 className="appName">Connection</h1>
           <div className="formInputs">
-            <input type="text" id="username" placeholder="Username" />
-            <input type="password" id="Password" placeholder="Password" />
+            <input
+              type="text"
+              name="username"
+              placeholder="Username"
+              value={inputValues.username}
+              onChange={handleChange}
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={inputValues.password}
+              onChange={handleChange}
+            />
           </div>
           <button type="submit" className="submit">
             Login
@@ -21,6 +87,7 @@ const Login = () => {
           </Link>
         </form>
       </FormContainer>
+      <ToastContainer />
     </section>
   );
 };
@@ -51,7 +118,7 @@ const FormContainer = styled.div`
       flex-direction: column;
       input {
         padding: 0.5rem 1rem;
-        margin-top: 1.3rem;
+        margin-top: 1.2rem;
         border: 3px solid #0f36a1;
         outline: none;
         border-radius: 7px;
@@ -65,8 +132,8 @@ const FormContainer = styled.div`
       margin-top: 1rem;
       border-radius: 7px;
       background-color: #ee2df5;
-      font-size: 1rem;
       color: #fff;
+      font-size: 1rem;
       text-transform: uppercase;
     }
     .authLink {

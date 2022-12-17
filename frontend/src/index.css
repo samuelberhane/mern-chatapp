@@ -10,7 +10,7 @@
 
 body {
   font-family: "Source Sans Pro", sans-serif;
-  background-color: rgb(150, 150, 248);
+  background-color: rgb(4, 4, 26);
   color: #fff;
 }
 
@@ -24,4 +24,16 @@ a {
 
 li {
   list-style: none;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgb(185, 216, 216);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: grey;
 }

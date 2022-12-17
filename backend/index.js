@@ -6,6 +6,7 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const authRouter = require("./routes/authRoute");
+const userRouter = require("./routes/userRoute");
 dotenv.config();
 
 const PORT = process.env.PORT || 8000;
@@ -15,6 +16,9 @@ app.use(morgan("tiny"));
 
 // use cors
 app.use(cors());
+
+// static file
+app.use("/images", express.static("./images"));
 
 // parse request
 app.use(bodyParser.json({ extended: false }));
@@ -26,6 +30,7 @@ app.get("/", (req, res) => {
 
 // routes
 app.use("/api/auth", authRouter);
+app.use("/api/users", userRouter);
 
 mongoose.set("strictQuery", false);
 mongoose

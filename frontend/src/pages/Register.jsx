@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { registerRoute } from "../utils/apiRoutes";
+import { toastOption } from "../utils/toastOption";
+import { useGlobalUserContext } from "../context/userContext";
 
 const Register = () => {
+  const { dispatch } = useGlobalUserContext();
   const [inputValues, setInputValues] = useState({
     username: "",
     email: "",
@@ -14,17 +17,14 @@ const Register = () => {
     confirmPassword: "",
   });
 
+  const navigate = useNavigate();
+
+  // handle input changes
   const handleChange = (e) => {
     setInputValues({ ...inputValues, [e.target.name]: e.target.value });
   };
 
-  const toastOption = {
-    position: "top-right",
-    draggable: true,
-    pauseOnHover: true,
-    theme: "dark",
-    autoClose: 5000,
-  };
+  // check validation
   const handleValidation = () => {
     const { username, email, password, confirmPassword } = inputValues;
     if (!email) {
@@ -48,22 +48,33 @@ const Register = () => {
     return true;
   };
 
-  const handleSubmit = (e) => {
+  // submit register form
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    handleValidation();
+    const validation = handleValidation();
 
-    if (handleValidation) {
+    console.log(validation);
+    if (validation) {
       const { username, email, password } = inputValues;
-      const { data } = axios.post(registerRoute, { username, email, password });
-
-      setInputValues({
-        username: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
+      const { data } = await axios.post(registerRoute, {
+        username,
+        email,
+        password,
       });
+      if (data.status === false) toast.error(data.message, toastOption);
+      if (data.status === true) {
+        dispatch({ type: "REGISTER", payload: data.message });
+        navigate("/login");
+        setInputValues({
+          username: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+      }
     }
   };
+
   return (
     <section>
       <FormContainer>
