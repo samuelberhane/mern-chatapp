@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import ChatMessages from "./ChatMessages";
 import { BsEmojiSmileFill } from "react-icons/bs";
 import Picker from "emoji-picker-react";
+import axios from "axios";
+import { messageRoute } from "../utils/apiRoutes";
 
-const ChatContainer = ({ currentChat, setCurrentChat, user }) => {
+const ChatContainer = ({ currentChat, user, allUsers, socket }) => {
   const [showEmoji, setShowEmoji] = useState(false);
   const [textMessage, setTextMessage] = useState("");
+  const [allMessages, setAllMessages] = useState(null);
+  const [recievedMessage, setRecievedMessage] = useState(null);
   const handleEmoji = () => {
     setShowEmoji(!showEmoji);
   };
@@ -14,6 +18,55 @@ const ChatContainer = ({ currentChat, setCurrentChat, user }) => {
   const handleEmojiPick = (emoji, e) => {
     setTextMessage(textMessage + emoji.emoji);
   };
+
+  const handleSubmit = async () => {
+    socket.current?.emit("sendMessage", {
+      from: user.userData._id,
+      to: currentChat,
+      text: textMessage,
+    });
+    await axios.post(messageRoute, {
+      from: user.userData._id,
+      to: currentChat,
+      text: textMessage,
+    });
+    let { data: messages } = await axios.post(`${messageRoute}/messages`, {
+      from: user.userData._id,
+      to: currentChat,
+    });
+
+    setAllMessages(messages);
+    setTextMessage("");
+  };
+
+  useEffect(() => {
+    socket.current?.on("getMessage", (data) => {
+      setRecievedMessage({
+        sender: data.from,
+        text: data.text,
+        users: [data.from, data.to],
+        createdAt: Date.now(),
+      });
+    });
+  }, [allMessages, socket]);
+
+  useEffect(() => {
+    if (recievedMessage) {
+      setAllMessages((prev) => [...prev, recievedMessage]);
+    }
+  }, [recievedMessage]);
+
+  useEffect(() => {
+    let getMessages = async () => {
+      let { data } = await axios.post(`${messageRoute}/messages`, {
+        from: user.userData._id,
+        to: currentChat,
+      });
+      setAllMessages(data);
+    };
+    getMessages();
+  }, [currentChat, user]);
+
   return (
     <Messages>
       {currentChat ? (
@@ -23,7 +76,12 @@ const ChatContainer = ({ currentChat, setCurrentChat, user }) => {
               <Picker onEmojiClick={handleEmojiPick} />
             </div>
           )}
-          <ChatMessages />
+          <ChatMessages
+            allMessages={allMessages}
+            user={user}
+            allUsers={allUsers}
+            currentChat={currentChat}
+          />
           <div className="sendMessage">
             <button className="emoji" onClick={handleEmoji}>
               <BsEmojiSmileFill />
@@ -35,7 +93,7 @@ const ChatContainer = ({ currentChat, setCurrentChat, user }) => {
                 value={textMessage}
                 onChange={(e) => setTextMessage(e.target.value)}
               />
-              <button>
+              <button onClick={handleSubmit}>
                 <i className="fa-solid fa-paper-plane"></i>
               </button>
             </div>
@@ -53,13 +111,10 @@ const ChatContainer = ({ currentChat, setCurrentChat, user }) => {
 
 const Messages = styled.div`
   padding: 1rem;
-
+  height: 87vh;
   .emojiPicker {
     position: fixed;
     bottom: 5.5rem;
-    .emoji-picker-react {
-      background-color: #7826c5;
-    }
   }
   .startChat {
     text-align: center;
@@ -67,18 +122,17 @@ const Messages = styled.div`
 
   .chat {
     border-radius: 0.5rem;
+    background-color: red;
     width: 100%;
     height: 100%;
     background-color: #fff;
     display: grid;
     grid-template-rows: 92% 8%;
-
     .sendMessage {
       background-color: #1b0430;
       border-radius: 0.3rem;
       display: flex;
       align-items: center;
-
       .emoji {
         flex: 1;
         background-color: transparent;

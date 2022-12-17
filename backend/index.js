@@ -7,6 +7,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const authRouter = require("./routes/authRoute");
 const userRouter = require("./routes/userRoute");
+const messageRouter = require("./routes/messageRoute");
+const socket = require("socket.io");
 dotenv.config();
 
 const PORT = process.env.PORT || 8000;
@@ -31,13 +33,54 @@ app.get("/", (req, res) => {
 // routes
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
+app.use("/api/messages", messageRouter);
 
 mongoose.set("strictQuery", false);
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => {
-    app.listen(PORT, () => {
+    // create server
+    const server = app.listen(PORT, () => {
       console.log(`Connected to database && server running on port ${PORT}`);
+    });
+
+    // created io
+    const io = socket(server, {
+      cors: {
+        origin: "http://localhost:3000",
+        credentials: true,
+      },
+    });
+
+    let onlineUsers = [];
+
+    const addUser = (userId, socketId) => {
+      if (!onlineUsers.some((user) => user.userId === userId)) {
+        onlineUsers.push({ userId, socketId });
+      }
+    };
+    io.on("connection", (socket) => {
+      socket.on("addUser", (userId) => {
+        addUser(userId, socket.id);
+        if (onlineUsers) {
+          socket.emit("onlineUsers", onlineUsers);
+        }
+      });
+
+      socket.on("sendMessage", (data) => {
+        const recieverUser = onlineUsers.find(
+          (user) => user.userId === data.to
+        );
+
+        if (recieverUser) {
+          socket.to(recieverUser.socketId).emit("getMessage", data);
+        }
+        socket.emit("onlineUsers", onlineUsers);
+      });
+      socket.on("logout", (userId) => {
+        onlineUsers = onlineUsers.filter((user) => user.userId !== userId);
+        socket.emit("onlineUsers", onlineUsers);
+      });
     });
   })
   .catch((error) => {

@@ -1,19 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { ChatContainer, Contacts, OnlineFriends } from "../components";
-import { userRoute } from "../utils/apiRoutes";
+import { userRoute, host } from "../utils/apiRoutes";
 import axios from "axios";
-import { useEffect } from "react";
 import { useGlobalUserContext } from "../context/userContext";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { toastOption } from "../utils/toastOption";
 import loader from "../loader.svg";
+import { io } from "socket.io-client";
 
 const Chat = () => {
   const { user } = useGlobalUserContext();
   const [allUsers, setAllUsers] = useState(null);
-  const [currentChat, setCurrentChat] = useState(1);
+  const [onlineUsers, setOnlineUsers] = useState(null);
+  const [currentChat, setCurrentChat] = useState(null);
+  const socket = useRef();
+
+  useEffect(() => {
+    if (user) {
+      socket.current = io(host);
+      socket.current.emit("addUser", user.userData._id);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    socket.current?.on("onlineUsers", (users) => {
+      setOnlineUsers(users);
+    });
+  }, [user, socket]);
 
   useEffect(() => {
     const getUsers = async () => {
@@ -39,13 +54,23 @@ const Chat = () => {
       <Container>
         <h1>Chat With Family And Friends!</h1>
         <div className="chats">
-          <Contacts userContacts={userContacts} user={user} />
-          <ChatContainer
-            currentChat={currentChat}
-            setCurrentChat={setCurrentChat}
+          <Contacts
+            userContacts={userContacts}
             user={user}
+            setCurrentChat={setCurrentChat}
+            socket={socket}
           />
-          <OnlineFriends />
+          <ChatContainer
+            socket={socket}
+            currentChat={currentChat}
+            user={user}
+            allUsers={allUsers}
+          />
+          <OnlineFriends
+            onlineUsers={onlineUsers}
+            user={user}
+            allUsers={allUsers}
+          />
         </div>
       </Container>
       <ToastContainer />

@@ -10,6 +10,8 @@ const reducer = (state, action) => {
         ...state,
         user: { userData: payload.userData, token: payload.token },
       };
+    case "LOGOUT":
+      return { ...state, user: null };
     case "REGISTER":
       return { ...state, accountCreated: payload };
     case "CREATED":

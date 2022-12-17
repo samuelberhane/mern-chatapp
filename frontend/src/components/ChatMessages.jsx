@@ -1,41 +1,54 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
 import { imageRoute } from "../utils/apiRoutes";
+import formatDistanceToNow from "date-fns/formatDistanceToNow";
 
-const ChatMessages = () => {
+const ChatMessages = ({ allMessages, user, allUsers, currentChat }) => {
+  const currentContact = allUsers.find((user) => user._id === currentChat);
+  const scrollRef = useRef();
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [allMessages]);
   return (
     <Messages>
       <div className="currentContact">
         <div className="contactImage">
-          <img src={`${imageRoute}/defaultUser.png`} alt="current contact" />
+          <img
+            src={`${imageRoute}/${currentContact.profilePicture}`}
+            alt="current contact"
+          />
         </div>
-        <h2>aaron</h2>
+        <h2>{currentContact.username}</h2>
       </div>
-      <div className="messageContainer">
-        <div className="messageContent">
-          <div className="senderImage">
-            <img src={`${imageRoute}/defaultUser.png`} alt="" />
-          </div>
-          <p>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae
-            laborum ut id eum. Illum, debitis!
-          </p>
-        </div>
-        <div className="messageTime">2 days ago</div>
-      </div>
-      <div className="messageContainer">
-        <div className="messageContent user">
-          <div className="senderImage">
-            <img src={`${imageRoute}/defaultUser.png`} alt="" />
-          </div>
-          <p>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae
-            laborum ut id eum. Illum, debitis!
-          </p>
-        </div>
-        <div className="messageTime user">
-          <p>2 days ago</p>{" "}
-        </div>
+      <div className="textMessages">
+        {allMessages?.map((message, index) => {
+          const { sender, text, createdAt } = message;
+          return (
+            <div className="messageContainer" key={index} ref={scrollRef}>
+              <div
+                className={`${
+                  sender === user.userData._id
+                    ? "messageContent user"
+                    : "messageContent"
+                }`}
+              >
+                {/* <div className="senderImage">
+                  <img src={`${imageRoute}/defaultUser.png`} alt="" />
+                </div> */}
+                <p>{text}</p>
+              </div>
+              <div
+                className={`${
+                  sender === user.userData._id
+                    ? "messageTime user"
+                    : "messageTime"
+                }`}
+              >
+                {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </Messages>
   );
@@ -43,17 +56,19 @@ const ChatMessages = () => {
 
 const Messages = styled.div`
   overflow-y: scroll;
-
+  height: 100%;
+  .textMessages {
+    overflow-y: scroll;
+  }
   .currentContact {
     background-color: #eb68e0;
     display: flex;
-    padding: 0.3rem 1rem;
+    padding: 0.1rem 1rem;
     align-items: center;
     gap: 0.4rem;
     .contactImage {
       width: 40px;
       height: 40px;
-
       img {
         width: 100%;
         height: 100%;
@@ -63,16 +78,16 @@ const Messages = styled.div`
     }
   }
   .messageContainer {
-    padding: 0.5rem;
-    margin-bottom: 0.1rem;
+    padding: 0.2rem 0.3rem;
+    margin-bottom: 0.3rem;
   }
   .messageContent {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 3px;
     .senderImage {
-      width: 40px;
-      height: 40px;
+      width: 35px;
+      height: 35px;
       align-self: flex-start;
       img {
         width: 100%;
@@ -89,8 +104,8 @@ const Messages = styled.div`
   }
   .messageTime {
     color: #000;
-    font-size: 0.9rem;
-    padding: 0.1rem 3.5rem;
+    font-size: 0.8rem;
+    padding: 0 0.5rem;
     display: flex;
   }
   .messageContent.user {
