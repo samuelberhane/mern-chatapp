@@ -4,7 +4,7 @@ import ChatMessages from "./ChatMessages";
 import { BsEmojiSmileFill } from "react-icons/bs";
 import Picker from "emoji-picker-react";
 import axios from "axios";
-import { messageRoute } from "../utils/apiRoutes";
+import { messageRoute, imageRoute } from "../utils/apiRoutes";
 
 const ChatContainer = ({ currentChat, user, allUsers, socket }) => {
   const [showEmoji, setShowEmoji] = useState(false);
@@ -25,16 +25,23 @@ const ChatContainer = ({ currentChat, user, allUsers, socket }) => {
       to: currentChat,
       text: textMessage,
     });
-    await axios.post(messageRoute, {
-      from: user.userData._id,
-      to: currentChat,
-      text: textMessage,
-    });
-    let { data: messages } = await axios.post(`${messageRoute}/messages`, {
-      from: user.userData._id,
-      to: currentChat,
-    });
-
+    await axios.post(
+      messageRoute,
+      {
+        from: user.userData._id,
+        to: currentChat,
+        text: textMessage,
+      },
+      { headers: { authorization: `Bearer ${user.token}` } }
+    );
+    let { data: messages } = await axios.post(
+      `${messageRoute}/messages`,
+      {
+        from: user.userData._id,
+        to: currentChat,
+      },
+      { headers: { authorization: `Bearer ${user.token}` } }
+    );
     setAllMessages(messages);
     setTextMessage("");
   };
@@ -52,21 +59,31 @@ const ChatContainer = ({ currentChat, user, allUsers, socket }) => {
 
   useEffect(() => {
     if (recievedMessage) {
+      console.log("recievedMessage",recievedMessage)
       setAllMessages((prev) => [...prev, recievedMessage]);
     }
   }, [recievedMessage]);
 
   useEffect(() => {
     let getMessages = async () => {
-      let { data } = await axios.post(`${messageRoute}/messages`, {
-        from: user.userData._id,
-        to: currentChat,
-      });
+      let { data } = await axios.post(
+        `${messageRoute}/messages`,
+        {
+          from: user.userData._id,
+          to: currentChat,
+        },
+        {
+          headers: { authorization: `Bearer ${user.token}` },
+        }
+      );
       setAllMessages(data);
     };
     getMessages();
   }, [currentChat, user]);
 
+  if (!allUsers) return;
+
+  const currentContact = allUsers?.find((user) => user._id === currentChat);
   return (
     <Messages>
       {currentChat ? (
@@ -76,6 +93,15 @@ const ChatContainer = ({ currentChat, user, allUsers, socket }) => {
               <Picker onEmojiClick={handleEmojiPick} />
             </div>
           )}
+          <div className="currentContact">
+            <div className="contactImage">
+              <img
+                src={`${imageRoute}/${currentContact.profilePicture}`}
+                alt="current contact"
+              />
+            </div>
+            <h2>{currentContact.username}</h2>
+          </div>
           <ChatMessages
             allMessages={allMessages}
             user={user}
@@ -112,6 +138,23 @@ const ChatContainer = ({ currentChat, user, allUsers, socket }) => {
 const Messages = styled.div`
   padding: 1rem;
   height: 87vh;
+  .currentContact {
+    background-color: #eb68e0;
+    display: flex;
+    padding: 0.1rem 1rem;
+    align-items: center;
+    gap: 0.4rem;
+    .contactImage {
+      width: 40px;
+      height: 40px;
+      img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: #fff;
+      }
+    }
+  }
   .emojiPicker {
     position: fixed;
     bottom: 5.5rem;
@@ -127,7 +170,7 @@ const Messages = styled.div`
     height: 100%;
     background-color: #fff;
     display: grid;
-    grid-template-rows: 92% 8%;
+    grid-template-rows: 8% 84% 8%;
     .sendMessage {
       background-color: #1b0430;
       border-radius: 0.3rem;

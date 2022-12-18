@@ -4,5 +4,14 @@ const loginRoute = `${host}/api/auth/login`;
 const imageRoute = `${host}/images`;
 const userRoute = `${host}/api/users`;
 const messageRoute = `${host}/api/messages`;
+const uploadRoute = `${host}/api/upload`;
 
-export { host, registerRoute, loginRoute, imageRoute, userRoute, messageRoute };
+export {
+  host,
+  registerRoute,
+  loginRoute,
+  imageRoute,
+  userRoute,
+  messageRoute,
+  uploadRoute,
+};

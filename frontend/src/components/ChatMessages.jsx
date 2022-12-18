@@ -1,25 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
-import { imageRoute } from "../utils/apiRoutes";
 import formatDistanceToNow from "date-fns/formatDistanceToNow";
 
 const ChatMessages = ({ allMessages, user, allUsers, currentChat }) => {
-  const currentContact = allUsers.find((user) => user._id === currentChat);
   const scrollRef = useRef();
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [allMessages]);
   return (
     <Messages>
-      <div className="currentContact">
-        <div className="contactImage">
-          <img
-            src={`${imageRoute}/${currentContact.profilePicture}`}
-            alt="current contact"
-          />
-        </div>
-        <h2>{currentContact.username}</h2>
-      </div>
       <div className="textMessages">
         {allMessages?.map((message, index) => {
           const { sender, text, createdAt } = message;
@@ -32,9 +21,6 @@ const ChatMessages = ({ allMessages, user, allUsers, currentChat }) => {
                     : "messageContent"
                 }`}
               >
-                {/* <div className="senderImage">
-                  <img src={`${imageRoute}/defaultUser.png`} alt="" />
-                </div> */}
                 <p>{text}</p>
               </div>
               <div
@@ -60,23 +46,7 @@ const Messages = styled.div`
   .textMessages {
     overflow-y: scroll;
   }
-  .currentContact {
-    background-color: #eb68e0;
-    display: flex;
-    padding: 0.1rem 1rem;
-    align-items: center;
-    gap: 0.4rem;
-    .contactImage {
-      width: 40px;
-      height: 40px;
-      img {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background-color: #fff;
-      }
-    }
-  }
+
   .messageContainer {
     padding: 0.2rem 0.3rem;
     margin-bottom: 0.3rem;

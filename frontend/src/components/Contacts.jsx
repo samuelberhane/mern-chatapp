@@ -1,15 +1,36 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
-import { imageRoute } from "../utils/apiRoutes";
+import { imageRoute, userRoute, uploadRoute } from "../utils/apiRoutes";
 import { useGlobalUserContext } from "../context/userContext";
+import axios from "axios";
 
 const Contacts = ({ userContacts, user, setCurrentChat, socket }) => {
   const { dispatch } = useGlobalUserContext();
+  const [imageFile, setImageFile] = useState("");
 
   const handleLogout = () => {
     socket.current?.emit("logout", user.userData._id);
     localStorage.removeItem("chatAppUser");
     dispatch({ type: "LOGOUT" });
+  };
+
+  const handleUpdate = async () => {
+    if (imageFile) {
+      const data = new FormData();
+      const fileName = Date.now() + imageFile.name;
+      data.append("name", fileName);
+      data.append("file", imageFile);
+      await axios.post(uploadRoute, data);
+      let { data: updatedUser } = await axios.put(
+        `${userRoute}/${user.userData._id}`,
+        {
+          profilePicture: fileName,
+        }
+      );
+      dispatch({ type: "UPDATE_PROFILE", payload: updatedUser });
+      console.log("updatedUser", updatedUser);
+      setImageFile("");
+    }
   };
   return (
     <ContactContainer>
@@ -33,17 +54,33 @@ const Contacts = ({ userContacts, user, setCurrentChat, socket }) => {
                 </div>
                 <h3 className="contactName">{username} </h3>
               </div>
-              <div className="editProfile">
-                <button>Edit</button>
-              </div>
             </div>
           );
         })}
       </div>
 
       <div className="currentUser">
-        <img src={`${imageRoute}/${user.userData.profilePicture}`} alt="" />
-        <h2>{user.userData.username}</h2>
+        <img
+          src={`${imageRoute}/${user.userData.profilePicture}`}
+          alt="currentUser"
+        />
+        <h4>{user.userData.username}</h4>
+        <div className="editProfile">
+          {!imageFile ? (
+            <>
+              <label htmlFor="file">Edit</label>
+              <input
+                type="file"
+                id="file"
+                value={imageFile}
+                accept=".png,.jpeg,.jpg"
+                onChange={(e) => setImageFile(e.target.files[0])}
+              />
+            </>
+          ) : (
+            <button onClick={handleUpdate}>update</button>
+          )}
+        </div>
       </div>
     </ContactContainer>
   );
@@ -54,7 +91,6 @@ const ContactContainer = styled.div`
   .logoutBtn {
     display: flex;
     justify-content: space-between;
-    padding-right: 0.3rem;
     margin-bottom: 0.5rem;
     button {
       border: none;
@@ -70,16 +106,38 @@ const ContactContainer = styled.div`
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    position: relative;
     img {
-      width: 50px;
-      height: 50px;
+      width: 60px;
+      height: 60px;
       border-radius: 50%;
       background-color: #000;
+    }
+    .editProfile {
+      position: absolute;
+      top: -5px;
+      right: 0;
+      #file {
+        display: none;
+      }
+      button,
+      label {
+        padding: 0.2rem 0.7rem;
+        border-radius: 4px;
+        border: none;
+        background-color: #57ec57;
+        color: #fff;
+        cursor: pointer;
+      }
+      button {
+        padding: 0.3rem 0.7rem;
+      }
     }
   }
   .userContacts {
     height: 75vh;
     overflow-y: scroll;
+    padding-right: 0.5rem;
     h3 {
       margin-bottom: 0.5rem;
     }
@@ -108,18 +166,6 @@ const ContactContainer = styled.div`
           border-radius: 50%;
           background-color: #fff;
         }
-      }
-    }
-    .editProfile {
-      position: absolute;
-      top: 0;
-      right: 0;
-      button {
-        padding: 0.2rem 0.7rem;
-        border-radius: 4px;
-        border: none;
-        background-color: #57ec57;
-        color: #fff;
       }
     }
   }

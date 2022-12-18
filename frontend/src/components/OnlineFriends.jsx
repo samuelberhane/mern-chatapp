@@ -11,21 +11,24 @@ const OnlineFriends = ({ onlineUsers, user, allUsers }) => {
   });
 
   if (onlineFriends) {
-    console.log("onlineFriends", onlineFriends);
     return (
       <OnlineContainer>
         <h2>Online Friends</h2>
         {onlineFriends.length > 0 && (
           <div className="onlineFriends">
             {onlineFriends?.map((friend, index) => {
-              const { username, profilePicture } = friend;
               return (
                 <div className="onlineFriend" key={index}>
-                  <img
-                    src={`${imageRoute}/${profilePicture}`}
-                    alt="online friend"
-                  />
-                  <p className="username">{username}</p>
+                  {friend?.profilePicture && (
+                    <img
+                      src={`${imageRoute}/${friend?.profilePicture}`}
+                      alt="online friend"
+                    />
+                  )}
+                  {friend?.username && (
+                    <p className="username">{friend?.username}</p>
+                  )}
+
                   <p className="onlineDot"></p>
                 </div>
               );

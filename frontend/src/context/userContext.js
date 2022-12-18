@@ -16,6 +16,8 @@ const reducer = (state, action) => {
       return { ...state, accountCreated: payload };
     case "CREATED":
       return { ...state, accountCreated: null };
+    case "UPDATE_PROFILE":
+      return { ...state, user: { ...state.user, userData: payload } };
     default:
       return state;
   }

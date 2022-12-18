@@ -9,26 +9,34 @@ import "react-toastify/dist/ReactToastify.css";
 import { toastOption } from "../utils/toastOption";
 import loader from "../loader.svg";
 import { io } from "socket.io-client";
+import decode from "jwt-decode";
 
 const Chat = () => {
-  const { user } = useGlobalUserContext();
+  const { user, dispatch } = useGlobalUserContext();
   const [allUsers, setAllUsers] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState(null);
   const [currentChat, setCurrentChat] = useState(null);
   const socket = useRef();
 
   useEffect(() => {
+    const { token } = user;
+    const decodedToken = decode(token);
+    if (decodedToken.exp * 1000 < new Date().getTime()) {
+      socket.current?.emit("logout", user.userData._id);
+      localStorage.removeItem("chatAppUser");
+      dispatch({ type: "LOGOUT" });
+    }
+  }, [dispatch, user]);
+
+  useEffect(() => {
     if (user) {
       socket.current = io(host);
       socket.current.emit("addUser", user.userData._id);
+      socket.current?.on("onlineUsers", (users) => {
+        setOnlineUsers(users);
+      });
     }
   }, [user]);
-
-  useEffect(() => {
-    socket.current?.on("onlineUsers", (users) => {
-      setOnlineUsers(users);
-    });
-  }, [user, socket]);
 
   useEffect(() => {
     const getUsers = async () => {
